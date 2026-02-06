@@ -31,16 +31,12 @@ def read_root():
             },
         },
     },)
-def calculate_distance(slope: float = Query(..., description="坡度，以斜率表示"), height: float = Query(..., description="高度，单位：米")):
-    if slope <= 0:
-        return {"error": "坡度必须大于0"}
-    if height <= 0:
-        return {"error": "高度必须大于0"}
+def calculate_distance(slope: float = Query(..., description="坡度，以斜率表示", ge=0), height: float = Query(..., description="高度，单位：米", ge=0)):
     x = symbols('x')
     slope_inverse = 1/slope
-    equation = Eq(x**2 + (slope_inverse*x)**2, (slope_inverse*x+height*2)**2)
+    equation = Eq(x**2 + (slope_inverse*x)**2, (slope_inverse*x+height/2)**2)
     solution = solve(equation, x)
-    distance = next(float(s) for s in solution if float(s) > 0)
+    distance = next(float(s) for s in solution if float(s) > 0) * 2
     return {
         "distance": distance,
         "distance_rounded": math.ceil(distance),
@@ -69,11 +65,7 @@ def calculate_distance(slope: float = Query(..., description="坡度，以斜率
         },
     },
     },)
-def calculate_parallel_turnout_distance(radius: float = Query(..., description="转弯半径，单位：米"), spacing: float = Query(..., description="平行道岔间距，单位：米")):
-    if radius <= 0:
-        return {"error": "转弯半径必须大于0"}
-    if spacing <= 0:
-        return {"error": "平行道岔间距必须大于0"}
+def calculate_parallel_turnout_distance(radius: float = Query(..., description="转弯半径，单位：米", ge=0), spacing: float = Query(..., description="平行道岔间距，单位：米", ge=0)):
     x = symbols('x')
     equation = Eq(x**2 + (spacing)**2, (radius*2)**2)
     solution = solve(equation, x)
