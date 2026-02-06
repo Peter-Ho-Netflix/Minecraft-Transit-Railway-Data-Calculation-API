@@ -50,3 +50,40 @@ def calculate_distance(slope: float = Query(..., description="坡度，以斜率
             "values": [float(s) for s in solution],
         },
     }
+
+@app.get("/calculate_parallel_turnout_distance", description="计算平行道岔间为了满足转弯半径要求所需要经过的距离", tags=["计算"], responses={
+    200: {
+        "description": "成功",
+        "content": {
+            "application/json": {
+                "example": {
+                    "distance": 10.0,
+                    "distance_rounded": 10,
+                    "solution": {
+                        "raw": ["10.0"],
+                        "latex": ["10.0"],
+                        "values": [10.0],
+                    },
+                },
+            },
+        },
+    },
+    },)
+def calculate_parallel_turnout_distance(radius: float = Query(..., description="转弯半径，单位：米"), spacing: float = Query(..., description="平行道岔间距，单位：米")):
+    if radius <= 0:
+        return {"error": "转弯半径必须大于0"}
+    if spacing <= 0:
+        return {"error": "平行道岔间距必须大于0"}
+    x = symbols('x')
+    equation = Eq(x**2 + (spacing)**2, (radius*2)**2)
+    solution = solve(equation, x)
+    distance = next(float(s) for s in solution if float(s) > 0)
+    return {
+        "distance": distance,
+        "distance_rounded": math.ceil(distance),
+        "solution": {
+            "raw": [str(s) for s in solution],
+            "latex": [latex(s) for s in solution],
+            "values": [float(s) for s in solution],
+        },
+    }
