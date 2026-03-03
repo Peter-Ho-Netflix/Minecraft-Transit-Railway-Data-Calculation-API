@@ -1,6 +1,5 @@
 """
 UI 入口。之後將直接 import 並呼叫 features 中的函式，不透過 API。
-目前僅展示空視窗，不實作任何 UI 邏輯。
 """
 import wx
 from features import calculate_distance as calc_distance
