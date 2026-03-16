@@ -1,5 +1,5 @@
 import math
-from sympy import Interval, oo, symbols, Eq, solve, latex, cos, sin, calculus, solve_univariate_inequality
+from sympy import Interval, oo, sqrt, symbols, Eq, solve, latex, cos, sin, calculus, solve_univariate_inequality
 
 
 def calculate_distance(slope: float, height: float) -> dict:
@@ -96,5 +96,29 @@ def 计算规定转弯半径和转弯角度下的xy偏移量(radius: float, angl
             "raw": [str(xr), str(yr)],
             "latex": [latex(xr), latex(yr)],
             "values": [float(xr.inf), float(yr.inf)],
+        },
+    }
+
+def 计算特定号数道岔的转弯半径(number: int, spacing: float) -> dict:
+    """计算特定号数道岔的转弯半径。
+    几何关系：r = (spacing²/4 + x²/4) / spacing
+    其中number为道岔号数，spacing为道岔间距
+    """
+    x = symbols('x')
+    y = symbols('y')
+    equation1 = Eq(number*y+spacing, x)
+    equation2 = Eq(y**2+(number*y)**2, x**2)
+    # 求解方程组？
+    # 使用solve函数求解方程组
+    solutions = solve([equation1, equation2], [x, y])
+    # 從所有解中選擇 y>0 的實數解
+    solution_positive = next(s for s in solutions if float(s[0]) > 0 and float(s[1]) > 0)
+    radius_value = float(solution_positive[0])
+    return {
+        "radius": radius_value,
+        "solution": {
+            "raw": [str(s) for s in solutions],
+            "latex": [latex(s) for s in solutions],
+            "values": [[float(s[0]), float(s[1])] for s in solutions],
         },
     }

@@ -3,7 +3,7 @@ from fastapi.params import Query
 
 from features import calculate_distance as calc_distance
 from features import calculate_parallel_turnout_distance as calc_parallel_turnout_distance
-from features.main import 计算规定转弯半径和转弯角度下的xy偏移量
+from features.main import 计算特定号数道岔的转弯半径, 计算规定转弯半径和转弯角度下的xy偏移量
 
 root = APIRouter()
 
@@ -105,3 +105,26 @@ def calculate_xy_offset(
     angle: float = Query(..., description="转弯角度，单位：弧度", ge=0),
 ):
     return 计算规定转弯半径和转弯角度下的xy偏移量(radius, angle)
+
+@root.get(
+    "/calculate_specific_turnout_radius",
+    description="计算特定号数道岔的转弯半径",
+    tags=["计算"],
+    responses={
+        200: {
+            "description": "成功",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "radius": 10.0,
+                    },
+                },
+            },
+        },
+    },
+)
+def calculate_specific_turnout_radius(
+    number: int = Query(..., description="道岔号数", ge=0),
+    spacing: float = Query(1.435, description="道岔间距，单位：米", ge=0),
+):
+    return 计算特定号数道岔的转弯半径(number, spacing)
