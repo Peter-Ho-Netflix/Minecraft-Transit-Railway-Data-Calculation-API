@@ -1,6 +1,7 @@
 ## Minecraft Transit Railway 铁路工程计算系统
 
 [![Python](https://img.shields.io/badge/Python-%3E%3D3.14-3776AB.svg)](https://www.python.org/)
+[![Poetry](https://img.shields.io/badge/Poetry-1.9.0%2B-009688.svg)](https://python-poetry.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.128.1%2B-009688.svg)](https://fastapi.tiangolo.com/)
 [![wxPython](https://img.shields.io/badge/wxPython-4.2.5%2B-ff69b4.svg)](https://wxpython.org/)
 
@@ -52,30 +53,18 @@ flowchart LR
 
 ### 系统需求
 
-- **Python**：`>= 3.14`（來自 `pyproject.toml` 的 `requires-python` 設定）
+- **Python**：`>= 3.14`（来自 `pyproject.toml` 的 `requires-python` 设定）
 - 建议平台：Windows / Linux / macOS（需能安装 `wxPython`，部分平台可能需要额外系统套件）
 
 ### 建议安装步骤
 
-在项目根目录执行以下步骤（以一般 `pip` 流程为例）：
+推荐使用 `poetry` 管理项目依赖，在项目根目录执行以下步骤即可完成安装：
 
-1. 建立并启用虚拟环境：
+```bash
+poetry install
+```
 
-   ```bash
-   python -m venv .venv
-   # Windows
-   .venv\Scripts\activate
-   # Linux / macOS
-   # source .venv/bin/activate
-   ```
-
-2. 安装必要依赖套件（与 `pyproject.toml` 中相对应）：
-
-   ```bash
-   pip install fastapi uvicorn sympy wxpython
-   ```
-
-   或者，你也可以依照自己惯用的方式，从 `pyproject.toml` 产生相对应的需求文件再安装。
+`poetry` 的安装方式请参考其官方文档：[Installation](https://python-poetry.org/docs/#installation)。
 
 ---
 
@@ -97,7 +86,7 @@ python app.py
 此时：
 
 - UI 的所有计算行为都会**直接调用 `features` 模块中的函数**，不通过 HTTP。
-- 若你有需要，也可以在瀏覽器或其他客戶端對 API 發送 HTTP 請求。
+- 若你有需要，也可以在浏览器或其他客户端对 API 发送 HTTP 请求。
 
 ### 仅启动 API
 
