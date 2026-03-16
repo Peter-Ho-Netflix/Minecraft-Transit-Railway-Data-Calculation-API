@@ -1,5 +1,5 @@
 import math
-from sympy import symbols, Eq, solve, latex, sqrt
+from sympy import Interval, oo, symbols, Eq, solve, latex, cos, sin, calculus, solve_univariate_inequality
 
 
 def calculate_distance(slope: float, height: float) -> dict:
@@ -65,5 +65,36 @@ def calculate_parallel_turnout_distance(radius: float, spacing: float) -> dict:
             "raw": [str(s) for s in x_solutions],
             "latex": [latex(s) for s in x_solutions],
             "values": [float(s) for s in x_solutions],
+        },
+    }
+
+def 计算规定转弯半径和转弯角度下的xy偏移量(radius: float, angle: float) -> dict:
+    """计算规定转弯半径和转弯角度下的xy偏移量。
+    几何关系：x = radius * sin(angle), y = radius * cos(angle)
+    其中angle为弧度制
+    """
+    r = symbols('r', real=True)
+
+    # 定义 x(r) 和 y(r)
+    x = r - r*cos(angle)
+    y = r*sin(angle)
+
+    # r 的定义域
+    domain = Interval(radius, oo)
+
+    # 求 x 和 y 的值域
+    xr = calculus.util.function_range(x, r, domain)
+    yr = calculus.util.function_range(y, r, domain)
+    print(xr, yr)
+
+    return {
+        "x": float(xr.inf),
+        "y": float(yr.inf),
+        "x_rounded": math.ceil(float(xr.inf)),
+        "y_rounded": math.ceil(float(yr.inf)),
+        "solution": {
+            "raw": [str(xr), str(yr)],
+            "latex": [latex(xr), latex(yr)],
+            "values": [float(xr.inf), float(yr.inf)],
         },
     }
