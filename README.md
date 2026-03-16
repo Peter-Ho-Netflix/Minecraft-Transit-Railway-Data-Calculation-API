@@ -70,7 +70,7 @@ poetry install
 
 ## 快速开始（Quick Start）
 
-### 同时启动 API 与 UI（推荐方式）
+### 同时启动 API 与 UI（默认模式，推荐）
 
 在项目根目录执行：
 
@@ -87,30 +87,39 @@ python app.py
 
 - UI 的所有计算行为都会**直接调用 `features` 模块中的函数**，不通过 HTTP。
 - 若你有需要，也可以在浏览器或其他客户端对 API 发送 HTTP 请求。
+- 如关闭窗口，API也会随之关闭。
 
 ### 仅启动 API
 
-如果你只想启动 HTTP API 而不启动 UI，可以使用：
+如果你只想启动 HTTP API 而不启动 UI，可以通过参数指定模式：
+
+```bash
+python app.py --api-only
+# 或简写：
+python app.py --api
+```
+
+在此模式下，程序会在当前进程中**阻塞运行 FastAPI 服务器**，不会启动 wxPython UI。
+
+你也可以继续使用原本的方式直接启动：
 
 ```bash
 uvicorn app:app --reload
+# 或：
+python -m uvicorn app:app --reload
 ```
-
-或等价的 `python -m uvicorn app:app --reload`。
 
 ### 仅启动 UI
 
-如果你只想启动桌面 UI（不启动 API 线程），可以直接执行 UI 入口：
+如果你只想启动桌面 UI（不启动 API），可以通过参数指定模式：
 
 ```bash
-python UI/main.py
+python app.py --ui-only
+# 或简写：
+python app.py --ui
 ```
 
-或：
-
-```bash
-python -m UI.main
-```
+在此模式下，仅会启动 wxPython UI，不会开启任何 HTTP API 服务器。
 
 ---
 
