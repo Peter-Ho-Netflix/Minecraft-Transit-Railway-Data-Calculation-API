@@ -103,8 +103,9 @@ def calculate_parallel_turnout_distance(
 def calculate_xy_offset(
     radius: float = Query(..., description="转弯半径，单位：米", ge=0),
     angle: float = Query(..., description="转弯角度，单位：弧度", ge=0),
+    external_x_offset: float = Query(0, description="额外x偏移量，单位：米", ge=0),
 ):
-    return 计算规定转弯半径和转弯角度下的xy偏移量(radius, angle)
+    return 计算规定转弯半径和转弯角度下的xy偏移量(radius, angle, external_x_offset)
 
 @root.get(
     "/calculate_specific_turnout_radius",

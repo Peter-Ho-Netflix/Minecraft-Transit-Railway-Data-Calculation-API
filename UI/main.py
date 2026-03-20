@@ -153,6 +153,16 @@ class MainFrame(wx.Frame):
         self.angle_text_unit_xy_offset = wx.StaticText(self, label="°")
         self.angle_text_unit_xy_offset.SetPosition(wx.Point(310, 420))
 
+        self.external_x_offset_text = wx.StaticText(self, label="额外x偏移量")
+        self.external_x_offset_text.SetPosition(wx.Point(320, 405))
+
+        self.external_x_offset_text_ctrl = wx.TextCtrl(self)
+        self.external_x_offset_text_ctrl.SetPosition(wx.Point(320, 420))
+        self.external_x_offset_text_ctrl.SetSize(wx.Size(100, 20))
+        self.external_x_offset_text_ctrl.SetValue("0.0")
+        self.external_x_offset_text_unit = wx.StaticText(self, label="米")
+        self.external_x_offset_text_unit.SetPosition(wx.Point(420, 420))
+
         self.x_text_xy_offset = wx.StaticText(self, label="x偏移量")
         self.x_text_xy_offset.SetPosition(wx.Point(10, 445))
 
@@ -216,7 +226,8 @@ class MainFrame(wx.Frame):
     def on_calculate_xy_offset(self, event):
         radius = float(self.radius_text_ctrl_xy_offset.GetValue())
         angle = float(self.angle_text_ctrl_xy_offset.GetValue()) * math.pi / 180
-        result = 计算规定转弯半径和转弯角度下的xy偏移量(radius, angle)
+        external_x_offset = float(self.external_x_offset_text_ctrl.GetValue())
+        result = 计算规定转弯半径和转弯角度下的xy偏移量(radius, angle, external_x_offset)
         self.x_text_ctrl_xy_offset.SetValue(str(result["x"]))
         self.y_text_ctrl_xy_offset.SetValue(str(result["y"]))
         self.x_rounded_text_ctrl.SetValue(str(result["x_rounded"]))

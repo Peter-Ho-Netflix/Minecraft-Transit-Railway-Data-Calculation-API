@@ -68,7 +68,7 @@ def calculate_parallel_turnout_distance(radius: float, spacing: float) -> dict:
         },
     }
 
-def 计算规定转弯半径和转弯角度下的xy偏移量(radius: float, angle: float) -> dict:
+def 计算规定转弯半径和转弯角度下的xy偏移量(radius: float, angle: float, external_x_offset: float = 0) -> dict:
     """计算规定转弯半径和转弯角度下的xy偏移量。
     几何关系：x = radius * sin(angle), y = radius * cos(angle)
     其中angle为弧度制
@@ -88,10 +88,10 @@ def 计算规定转弯半径和转弯角度下的xy偏移量(radius: float, angl
     print(xr, yr)
 
     return {
-        "x": float(xr.inf),
-        "y": float(yr.inf),
-        "x_rounded": math.ceil(float(xr.inf)),
-        "y_rounded": math.ceil(float(yr.inf)),
+        "x": float(xr.inf) + external_x_offset,
+        "y": float(yr.inf) + external_x_offset / math.tan(angle),
+        "x_rounded": math.ceil(float(xr.inf) + external_x_offset),
+        "y_rounded": math.ceil(float(yr.inf) + external_x_offset / math.tan(angle)),
         "solution": {
             "raw": [str(xr), str(yr)],
             "latex": [latex(xr), latex(yr)],

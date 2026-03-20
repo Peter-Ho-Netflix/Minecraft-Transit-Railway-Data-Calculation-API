@@ -1,6 +1,6 @@
 ## Minecraft Transit Railway 铁路工程计算系统
 
-[![Python](https://img.shields.io/badge/Python-%3E%3D3.14-3776AB.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.14%2B-3776AB.svg)](https://www.python.org/)
 [![Poetry](https://img.shields.io/badge/Poetry-1.9.0%2B-009688.svg)](https://python-poetry.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.128.1%2B-009688.svg)](https://fastapi.tiangolo.com/)
 [![wxPython](https://img.shields.io/badge/wxPython-4.2.5%2B-ff69b4.svg)](https://wxpython.org/)
