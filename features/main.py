@@ -108,7 +108,6 @@ def 计算特定号数道岔的转弯半径(number: int, spacing: float) -> dict
     y = symbols('y')
     equation1 = Eq(number*y+spacing, x)
     equation2 = Eq(y**2+(number*y)**2, x**2)
-    # 求解方程组？
     # 使用solve函数求解方程组
     solutions = solve([equation1, equation2], [x, y])
     # 從所有解中選擇 y>0 的實數解

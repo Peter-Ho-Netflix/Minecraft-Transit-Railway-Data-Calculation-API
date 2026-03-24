@@ -8,230 +8,171 @@ from features import calculate_parallel_turnout_distance as calc_parallel_turnou
 from features.main import 计算规定转弯半径和转弯角度下的xy偏移量
 
 
+def _make_label_input_row(parent, label_text, unit_text, value="0.0", readonly=False):
+    """建立「標籤 + 輸入 + 單位」一列，回傳 (hbox, text_ctrl)。"""
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
+    lbl = wx.StaticText(parent, label=label_text)
+    style = wx.TE_READONLY if readonly else 0
+    ctrl = wx.TextCtrl(parent, value=value, style=style, size=(100, -1))
+    unit = wx.StaticText(parent, label=unit_text)
+    hbox.Add(lbl, flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=5)
+    hbox.Add(ctrl, flag=wx.RIGHT, border=5)
+    hbox.Add(unit, flag=wx.ALIGN_CENTER_VERTICAL)
+    return hbox, ctrl
+
+
 class MainFrame(wx.Frame):
     def __init__(self, *args, **kw):
         super(MainFrame, self).__init__(*args, **kw)
         self.SetTitle("Minecraft Transit Railway Calculation API")
-        self.SetSize((800, 600))
+        self.SetSize((600, 700))
         self.Center()
 
-        self.calculate_distance_label = wx.StaticText(self, label="计算在固定坡度要求下，升起对应高度所需的距离")
-        font = self.calculate_distance_label.GetFont()
-        font.PointSize = 12
-        self.calculate_distance_label.SetFont(font)
-        self.calculate_distance_label.SetPosition(wx.Point(10, 10))
+        panel = wx.Panel(self)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.slope_text = wx.StaticText(self, label="坡度")
-        self.slope_text.SetPosition(wx.Point(10, 40))
+        # ----- 分區一：坡度距離計算 -----
+        box1 = wx.StaticBoxSizer(wx.VERTICAL, panel, "坡度距離計算（固定坡度下升起對應高度所需距離）")
+        box1_inner = box1.GetStaticBox()
 
-        self.slope_text_ctrl = wx.TextCtrl(self)
-        self.slope_text_ctrl.SetPosition(wx.Point(10, 60))
-        self.slope_text_ctrl.SetSize(wx.Size(100, 20))
-        self.slope_text_ctrl.SetValue("0.0")
-        self.slope_text_unit = wx.StaticText(self, label="‰")
-        self.slope_text_unit.SetPosition(wx.Point(110, 60))
+        row_slope, self.slope_text_ctrl = _make_label_input_row(box1_inner, "坡度", "‰", "0.0", readonly=False)
+        box1.Add(row_slope, flag=wx.ALL, border=5)
 
-        self.height_text = wx.StaticText(self, label="高度")
-        self.height_text.SetPosition(wx.Point(210, 40))
+        row_height, self.height_text_ctrl = _make_label_input_row(box1_inner, "高度", "米", "0.0", readonly=False)
+        box1.Add(row_height, flag=wx.ALL, border=5)
 
-        self.height_text_ctrl = wx.TextCtrl(self)
-        self.height_text_ctrl.SetPosition(wx.Point(210, 60))
-        self.height_text_ctrl.SetSize(wx.Size(100, 20))
-        self.height_text_ctrl.SetValue("0.0")
-        self.height_text_unit = wx.StaticText(self, label="米")
-        self.height_text_unit.SetPosition(wx.Point(310, 60))
+        row_dist, self.distance_text_ctrl = _make_label_input_row(box1_inner, "距离", "米", "—", readonly=True)
+        box1.Add(row_dist, flag=wx.ALL, border=5)
 
-        self.distance_text = wx.StaticText(self, label="距离")
-        self.distance_text.SetPosition(wx.Point(10, 85))
+        row_dist_r, self.distance_rounded_text_ctrl = _make_label_input_row(box1_inner, "距离（四舍五入）", "米", "—", readonly=True)
+        box1.Add(row_dist_r, flag=wx.ALL, border=5)
 
-        self.distance_text_ctrl = wx.TextCtrl(self)
-        self.distance_text_ctrl.SetPosition(wx.Point(10, 110))
-        self.distance_text_ctrl.SetSize(wx.Size(100, 20))
-        self.distance_text_ctrl.SetValue("0.0")
-        self.distance_text_unit = wx.StaticText(self, label="米")
-        self.distance_text_unit.SetPosition(wx.Point(110, 110))
+        row_slope_len, self.slope_length_text_ctrl = _make_label_input_row(box1_inner, "坡长", "米", "—", readonly=True)
+        box1.Add(row_slope_len, flag=wx.ALL, border=5)
 
-        self.distance_rounded_text = wx.StaticText(self, label="距离（四舍五入）")
-        self.distance_rounded_text.SetPosition(wx.Point(210, 85))
+        btn1 = wx.Button(box1_inner, label="计算")
+        btn1.Bind(wx.EVT_BUTTON, self.on_calculate_distance)
+        box1.Add(btn1, flag=wx.ALL, border=5)
 
-        self.distance_rounded_text_ctrl = wx.TextCtrl(self)
-        self.distance_rounded_text_ctrl.SetPosition(wx.Point(210, 110))
-        self.distance_rounded_text_ctrl.SetSize(wx.Size(100, 20))
-        self.distance_rounded_text_ctrl.SetValue("0")
-        self.distance_rounded_text_unit = wx.StaticText(self, label="米")
-        self.distance_rounded_text_unit.SetPosition(wx.Point(310, 110))
+        main_sizer.Add(box1, flag=wx.EXPAND | wx.ALL, border=10)
 
-        self.slope_length_text = wx.StaticText(self, label="坡长")
-        self.slope_length_text.SetPosition(wx.Point(10, 135))
+        # ----- 分區二：平行道岔距離 -----
+        box2 = wx.StaticBoxSizer(wx.VERTICAL, panel, "平行道岔距離（滿足轉彎半徑要求所需經過的距離）")
+        box2_inner = box2.GetStaticBox()
 
-        self.slope_length_text_ctrl = wx.TextCtrl(self)
-        self.slope_length_text_ctrl.SetPosition(wx.Point(10, 160))
-        self.slope_length_text_ctrl.SetSize(wx.Size(100, 20))
-        self.slope_length_text_ctrl.SetValue("0.0")
-        self.slope_length_text_unit = wx.StaticText(self, label="米")
-        self.slope_length_text_unit.SetPosition(wx.Point(110, 160))
+        row_radius, self.radius_text_ctrl = _make_label_input_row(box2_inner, "转弯半径", "米", "0.0", readonly=False)
+        box2.Add(row_radius, flag=wx.ALL, border=5)
 
-        self.calculate_distance_button = wx.Button(self, label="计算")
-        self.calculate_distance_button.SetPosition(wx.Point(10, 185))
-        self.calculate_distance_button.SetSize(wx.Size(100, 20))
-        self.calculate_distance_button.Bind(wx.EVT_BUTTON, self.on_calculate_distance)
+        row_spacing, self.spacing_text_ctrl = _make_label_input_row(box2_inner, "平行道岔间距", "米", "0.0", readonly=False)
+        box2.Add(row_spacing, flag=wx.ALL, border=5)
 
-        self.calculate_parallel_turnout_distance_label = wx.StaticText(self, label="计算平行道岔间为了满足转弯半径要求所需要经过的距离")
-        self.calculate_parallel_turnout_distance_label.SetPosition(wx.Point(10, 205))
-        font = self.calculate_parallel_turnout_distance_label.GetFont()
-        font.PointSize = 12
-        self.calculate_parallel_turnout_distance_label.SetFont(font)
+        row_df, self.distance_forward_text_ctrl = _make_label_input_row(box2_inner, "前进距离", "米", "—", readonly=True)
+        box2.Add(row_df, flag=wx.ALL, border=5)
 
-        self.radius_text = wx.StaticText(self, label="转弯半径")
-        self.radius_text.SetPosition(wx.Point(10, 235))
+        row_df_r, self.distance_forward_rounded_text_ctrl = _make_label_input_row(box2_inner, "前进距离（进一法）", "米", "—", readonly=True)
+        box2.Add(row_df_r, flag=wx.ALL, border=5)
 
-        self.radius_text_ctrl = wx.TextCtrl(self)
-        self.radius_text_ctrl.SetPosition(wx.Point(10, 250))
-        self.radius_text_ctrl.SetSize(wx.Size(100, 20))
-        self.radius_text_ctrl.SetValue("0.0")
-        self.radius_text_unit = wx.StaticText(self, label="米")
-        self.radius_text_unit.SetPosition(wx.Point(110, 250))
+        btn2 = wx.Button(box2_inner, label="计算")
+        btn2.Bind(wx.EVT_BUTTON, self.on_calculate_parallel_turnout_distance)
+        box2.Add(btn2, flag=wx.ALL, border=5)
 
-        self.spacing_text = wx.StaticText(self, label="平行道岔间距")
-        self.spacing_text.SetPosition(wx.Point(210, 235))
+        main_sizer.Add(box2, flag=wx.EXPAND | wx.ALL, border=10)
 
-        self.spacing_text_ctrl = wx.TextCtrl(self)
-        self.spacing_text_ctrl.SetPosition(wx.Point(210, 250))
-        self.spacing_text_ctrl.SetSize(wx.Size(100, 20))
-        self.spacing_text_ctrl.SetValue("0.0")
-        self.spacing_text_unit = wx.StaticText(self, label="米")
-        self.spacing_text_unit.SetPosition(wx.Point(310, 250))
+        # ----- 分區三：xy 偏移量 -----
+        box3 = wx.StaticBoxSizer(wx.VERTICAL, panel, "xy 偏移量")
+        box3_inner = box3.GetStaticBox()
 
-        self.distance_forward_text = wx.StaticText(self, label="前进距离")
-        self.distance_forward_text.SetPosition(wx.Point(10, 275))
+        row_r3, self.radius_text_ctrl_xy_offset = _make_label_input_row(box3_inner, "转弯半径", "米", "0.0", readonly=False)
+        box3.Add(row_r3, flag=wx.ALL, border=5)
 
-        self.distance_forward_text_ctrl = wx.TextCtrl(self)
-        self.distance_forward_text_ctrl.SetPosition(wx.Point(10, 290))
-        self.distance_forward_text_ctrl.SetSize(wx.Size(100, 20))
-        self.distance_forward_text_ctrl.SetValue("0.0")
-        self.distance_forward_text_unit = wx.StaticText(self, label="米")
-        self.distance_forward_text_unit.SetPosition(wx.Point(110, 290))
+        row_angle, self.angle_text_ctrl_xy_offset = _make_label_input_row(box3_inner, "转弯角度", "°", "0.0", readonly=False)
+        box3.Add(row_angle, flag=wx.ALL, border=5)
 
-        self.distance_forward_rounded_text = wx.StaticText(self, label="前进距离（进一法）")
-        self.distance_forward_rounded_text.SetPosition(wx.Point(10, 315))
+        row_ext, self.external_x_offset_text_ctrl = _make_label_input_row(box3_inner, "额外x偏移量", "米", "0.0", readonly=False)
+        box3.Add(row_ext, flag=wx.ALL, border=5)
 
-        self.distance_forward_rounded_text_ctrl = wx.TextCtrl(self)
-        self.distance_forward_rounded_text_ctrl.SetPosition(wx.Point(10, 330))
-        self.distance_forward_rounded_text_ctrl.SetSize(wx.Size(100, 20))
-        self.distance_forward_rounded_text_ctrl.SetValue("0.0")
-        self.distance_forward_rounded_text_unit = wx.StaticText(self, label="米")
-        self.distance_forward_rounded_text_unit.SetPosition(wx.Point(110, 330))
+        row_x, self.x_text_ctrl_xy_offset = _make_label_input_row(box3_inner, "x偏移量", "米", "—", readonly=True)
+        box3.Add(row_x, flag=wx.ALL, border=5)
 
-        self.calculate_parallel_turnout_distance_button = wx.Button(self, label="计算")
-        self.calculate_parallel_turnout_distance_button.SetPosition(wx.Point(10, 355))
-        self.calculate_parallel_turnout_distance_button.SetSize(wx.Size(100, 20))
-        self.calculate_parallel_turnout_distance_button.Bind(wx.EVT_BUTTON, self.on_calculate_parallel_turnout_distance)
+        row_y, self.y_text_ctrl_xy_offset = _make_label_input_row(box3_inner, "y偏移量", "米", "—", readonly=True)
+        box3.Add(row_y, flag=wx.ALL, border=5)
 
-        self.calculate_xy_offset_label = wx.StaticText(self, label="计算规定转弯半径和转弯角度下的xy偏移量")
-        self.calculate_xy_offset_label.SetPosition(wx.Point(10, 375))
-        font = self.calculate_xy_offset_label.GetFont()
-        font.PointSize = 12
-        self.calculate_xy_offset_label.SetFont(font)
+        row_xr, self.x_rounded_text_ctrl = _make_label_input_row(box3_inner, "x偏移量（进一法）", "米", "—", readonly=True)
+        box3.Add(row_xr, flag=wx.ALL, border=5)
 
-        self.radius_text_xy_offset = wx.StaticText(self, label="转弯半径")
-        self.radius_text_xy_offset.SetPosition(wx.Point(10, 405))
+        row_yr, self.y_rounded_text_ctrl = _make_label_input_row(box3_inner, "y偏移量（进一法）", "米", "—", readonly=True)
+        box3.Add(row_yr, flag=wx.ALL, border=5)
 
-        self.radius_text_ctrl_xy_offset = wx.TextCtrl(self)
-        self.radius_text_ctrl_xy_offset.SetPosition(wx.Point(10, 420))
-        self.radius_text_ctrl_xy_offset.SetSize(wx.Size(100, 20))
-        self.radius_text_ctrl_xy_offset.SetValue("0.0")
-        self.radius_text_unit_xy_offset = wx.StaticText(self, label="米")
-        self.radius_text_unit_xy_offset.SetPosition(wx.Point(110, 420))
+        btn3 = wx.Button(box3_inner, label="计算")
+        btn3.Bind(wx.EVT_BUTTON, self.on_calculate_xy_offset)
+        box3.Add(btn3, flag=wx.ALL, border=5)
 
-        self.angle_text_xy_offset = wx.StaticText(self, label="转弯角度")
-        self.angle_text_xy_offset.SetPosition(wx.Point(210, 405))
+        main_sizer.Add(box3, flag=wx.EXPAND | wx.ALL, border=10)
 
-        self.angle_text_ctrl_xy_offset = wx.TextCtrl(self)
-        self.angle_text_ctrl_xy_offset.SetPosition(wx.Point(210, 420))
-        self.angle_text_ctrl_xy_offset.SetSize(wx.Size(100, 20))
-        self.angle_text_ctrl_xy_offset.SetValue("0.0")
-        self.angle_text_unit_xy_offset = wx.StaticText(self, label="°")
-        self.angle_text_unit_xy_offset.SetPosition(wx.Point(310, 420))
+        panel.SetSizer(main_sizer)
+        self.CreateStatusBar()
 
-        self.external_x_offset_text = wx.StaticText(self, label="额外x偏移量")
-        self.external_x_offset_text.SetPosition(wx.Point(320, 405))
+    def _show_error(self, msg: str) -> None:
+        sb = self.GetStatusBar()
+        sb.SetStatusText(msg)
+        sb.SetBackgroundColour(wx.Colour(255, 200, 200))
+        sb.Refresh()
 
-        self.external_x_offset_text_ctrl = wx.TextCtrl(self)
-        self.external_x_offset_text_ctrl.SetPosition(wx.Point(320, 420))
-        self.external_x_offset_text_ctrl.SetSize(wx.Size(100, 20))
-        self.external_x_offset_text_ctrl.SetValue("0.0")
-        self.external_x_offset_text_unit = wx.StaticText(self, label="米")
-        self.external_x_offset_text_unit.SetPosition(wx.Point(420, 420))
-
-        self.x_text_xy_offset = wx.StaticText(self, label="x偏移量")
-        self.x_text_xy_offset.SetPosition(wx.Point(10, 445))
-
-        self.x_text_ctrl_xy_offset = wx.TextCtrl(self)
-        self.x_text_ctrl_xy_offset.SetPosition(wx.Point(10, 460))
-        self.x_text_ctrl_xy_offset.SetSize(wx.Size(100, 20))
-        self.x_text_ctrl_xy_offset.SetValue("0.0")
-        self.x_text_unit_xy_offset = wx.StaticText(self, label="米")
-        self.x_text_unit_xy_offset.SetPosition(wx.Point(110, 460))
-
-        self.y_text_xy_offset = wx.StaticText(self, label="y偏移量")
-        self.y_text_xy_offset.SetPosition(wx.Point(210, 445))
-
-        self.y_text_ctrl_xy_offset = wx.TextCtrl(self)
-        self.y_text_ctrl_xy_offset.SetPosition(wx.Point(210, 460))
-        self.y_text_ctrl_xy_offset.SetSize(wx.Size(100, 20))
-        self.y_text_ctrl_xy_offset.SetValue("0.0")
-        self.y_text_unit_xy_offset = wx.StaticText(self, label="米")
-        self.y_text_unit_xy_offset.SetPosition(wx.Point(310, 460))
-
-        self.x_rounded_text = wx.StaticText(self, label="x偏移量（进一法）")
-        self.x_rounded_text.SetPosition(wx.Point(10, 485))
-
-        self.x_rounded_text_ctrl = wx.TextCtrl(self)
-        self.x_rounded_text_ctrl.SetPosition(wx.Point(10, 500))
-        self.x_rounded_text_ctrl.SetSize(wx.Size(100, 20))
-        self.x_rounded_text_ctrl.SetValue("0.0")
-        self.x_rounded_text_unit = wx.StaticText(self, label="米")
-        self.x_rounded_text_unit.SetPosition(wx.Point(110, 500))
-
-        self.y_rounded_text = wx.StaticText(self, label="y偏移量（进一法）")
-        self.y_rounded_text.SetPosition(wx.Point(210, 485))
-
-        self.y_rounded_text_ctrl = wx.TextCtrl(self)
-        self.y_rounded_text_ctrl.SetPosition(wx.Point(210, 500))
-        self.y_rounded_text_ctrl.SetSize(wx.Size(100, 20))
-        self.y_rounded_text_ctrl.SetValue("0.0")
-        self.y_rounded_text_unit = wx.StaticText(self, label="米")
-        self.y_rounded_text_unit.SetPosition(wx.Point(310, 500))
-        
-        self.calculate_xy_offset_button = wx.Button(self, label="计算")
-        self.calculate_xy_offset_button.SetPosition(wx.Point(10, 525))
-        self.calculate_xy_offset_button.SetSize(wx.Size(100, 20))
-        self.calculate_xy_offset_button.Bind(wx.EVT_BUTTON, self.on_calculate_xy_offset)
+    def _clear_error(self) -> None:
+        sb = self.GetStatusBar()
+        sb.SetStatusText("")
+        sb.SetBackgroundColour(wx.NullColour)
+        sb.Refresh()
 
     def on_calculate_distance(self, event):
-        slope = float(self.slope_text_ctrl.GetValue())/1000
-        height = float(self.height_text_ctrl.GetValue())
-        result = calc_distance(slope, height)
-        self.distance_text_ctrl.SetValue(str(result["distance"]))
-        self.distance_rounded_text_ctrl.SetValue(str(result["distance_rounded"]))
-        self.slope_length_text_ctrl.SetValue(str(result["slope_length"][0]))
+        try:
+            slope = float(self.slope_text_ctrl.GetValue()) / 1000
+            height = float(self.height_text_ctrl.GetValue())
+            result = calc_distance(slope, height)
+            self._clear_error()
+            self.distance_text_ctrl.SetValue(str(result["distance"]))
+            self.distance_rounded_text_ctrl.SetValue(str(result["distance_rounded"]))
+            self.slope_length_text_ctrl.SetValue(str(result["slope_length"][0]))
+        except ValueError:
+            self._show_error("輸入格式錯誤：請輸入有效數字（例如 0.0）")
+        except (StopIteration, ZeroDivisionError):
+            self._show_error("計算無效：無符合條件的解（請檢查坡度、高度是否合理）")
+        except Exception as e:
+            self._show_error(f"計算失敗：{str(e)}")
 
     def on_calculate_parallel_turnout_distance(self, event):
-        radius = float(self.radius_text_ctrl.GetValue())
-        spacing = float(self.spacing_text_ctrl.GetValue())
-        result = calc_parallel_turnout_distance(radius, spacing)
-        self.distance_forward_text_ctrl.SetValue(str(result["distance"]))
-        self.distance_forward_rounded_text_ctrl.SetValue(str(result["distance_rounded"]))
+        try:
+            radius = float(self.radius_text_ctrl.GetValue())
+            spacing = float(self.spacing_text_ctrl.GetValue())
+            result = calc_parallel_turnout_distance(radius, spacing)
+            self._clear_error()
+            self.distance_forward_text_ctrl.SetValue(str(result["distance"]))
+            self.distance_forward_rounded_text_ctrl.SetValue(str(result["distance_rounded"]))
+        except ValueError:
+            self._show_error("輸入格式錯誤：請輸入有效數字（例如 0.0）")
+        except (StopIteration, ZeroDivisionError):
+            self._show_error("計算無效：無符合條件的解（請檢查轉彎半徑、道岔間距是否合理）")
+        except Exception as e:
+            self._show_error(f"計算失敗：{str(e)}")
 
     def on_calculate_xy_offset(self, event):
-        radius = float(self.radius_text_ctrl_xy_offset.GetValue())
-        angle = float(self.angle_text_ctrl_xy_offset.GetValue()) * math.pi / 180
-        external_x_offset = float(self.external_x_offset_text_ctrl.GetValue())
-        result = 计算规定转弯半径和转弯角度下的xy偏移量(radius, angle, external_x_offset)
-        self.x_text_ctrl_xy_offset.SetValue(str(result["x"]))
-        self.y_text_ctrl_xy_offset.SetValue(str(result["y"]))
-        self.x_rounded_text_ctrl.SetValue(str(result["x_rounded"]))
-        self.y_rounded_text_ctrl.SetValue(str(result["y_rounded"]))
+        try:
+            radius = float(self.radius_text_ctrl_xy_offset.GetValue())
+            angle = float(self.angle_text_ctrl_xy_offset.GetValue()) * math.pi / 180
+            external_x_offset = float(self.external_x_offset_text_ctrl.GetValue())
+            result = 计算规定转弯半径和转弯角度下的xy偏移量(radius, angle, external_x_offset)
+            self._clear_error()
+            self.x_text_ctrl_xy_offset.SetValue(str(result["x"]))
+            self.y_text_ctrl_xy_offset.SetValue(str(result["y"]))
+            self.x_rounded_text_ctrl.SetValue(str(result["x_rounded"]))
+            self.y_rounded_text_ctrl.SetValue(str(result["y_rounded"]))
+        except ValueError:
+            self._show_error("輸入格式錯誤：請輸入有效數字（例如 0.0）")
+        except (StopIteration, ZeroDivisionError):
+            self._show_error("計算無效：無符合條件的解（請檢查轉彎半徑、轉彎角度是否合理）")
+        except Exception as e:
+            self._show_error(f"計算失敗：{str(e)}")
+
 
 class App(wx.App):
     def OnInit(self):
