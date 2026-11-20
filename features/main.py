@@ -1,8 +1,55 @@
 import math
+from dataclasses import dataclass
+
 from sympy import Interval, oo, sqrt, symbols, Eq, solve, latex, cos, sin, calculus, solve_univariate_inequality
 
 
-def calculate_distance(slope: float, height: float) -> dict:
+@dataclass
+class SolutionDetail:
+    raw: list[str]
+    latex: list[str]
+    values: list
+
+
+@dataclass
+class DistanceSolutions:
+    distance: SolutionDetail
+    radius: SolutionDetail
+
+
+@dataclass
+class DistanceResult:
+    distance: float
+    distance_rounded: int
+    slope_length: list[float]
+    solutions: DistanceSolutions
+
+
+@dataclass
+class ParallelTurnoutDistanceResult:
+    distance: float
+    distance_rounded: int
+    radius_rounded: float
+    length: float
+    solution: SolutionDetail
+
+
+@dataclass
+class XyOffsetResult:
+    x: float
+    y: float
+    x_rounded: int
+    y_rounded: int
+    solution: SolutionDetail
+
+
+@dataclass
+class TurnoutRadiusResult:
+    radius: float
+    solution: SolutionDetail
+
+
+def calculate_distance(slope: float, height: float, radius: float) -> DistanceResult:
     """計算在固定坡度要求下，升起對應高度所需的距離。"""
     x = symbols('x')
     slope_inverse = 1 / slope
@@ -13,26 +60,26 @@ def calculate_distance(slope: float, height: float) -> dict:
     equation1 = Eq((r/(2*math.tan(slope)) - height/2)/(r/(2*math.tan(slope))), math.cos(slope))
     solution1 = solve(equation1, r)
     slope_length = [float(s) for s in solution1]
-    return {
-        "distance": distance,
-        "distance_rounded": math.ceil(distance),
-        "slope_length": slope_length,
-        "solutions": {
-            "distance": {
-                "raw": [str(s) for s in solution0],
-                "latex": [latex(s) for s in solution0],
-                "values": [float(s) for s in solution0],
-            },
-            "radius": {
-                "raw": [str(s) for s in solution1],
-                "latex": [latex(s) for s in solution1],
-                "values": [float(s) for s in solution1],
-            },
-        },
-    }
+    return DistanceResult(
+        distance=distance,
+        distance_rounded=math.ceil(distance),
+        slope_length=slope_length,
+        solutions=DistanceSolutions(
+            distance=SolutionDetail(
+                raw=[str(s) for s in solution0],
+                latex=[latex(s) for s in solution0],
+                values=[float(s) for s in solution0],
+            ),
+            radius=SolutionDetail(
+                raw=[str(s) for s in solution1],
+                latex=[latex(s) for s in solution1],
+                values=[float(s) for s in solution1],
+            ),
+        ),
+    )
 
 
-def calculate_parallel_turnout_distance(radius: float, spacing: float) -> dict:
+def calculate_parallel_turnout_distance(radius: float, spacing: float) -> ParallelTurnoutDistanceResult:
     """計算平行道岔間為滿足轉彎半徑要求所需要經過的距離。
     幾何關係：r² = (r - spacing/2)² + (x/2)²，約束條件 r >= radius（如中國高鐵 r≥600m）
     """
@@ -56,19 +103,20 @@ def calculate_parallel_turnout_distance(radius: float, spacing: float) -> dict:
     r_solutions = solve(equation2, r)
     radius_rounded = next(float(s) for s in r_solutions if float(s) > 0)
     length = math.sin((distance_rounded/2)/radius_rounded) * radius_rounded * 2
-    return {
-        "distance": distance,
-        "distance_rounded": distance_rounded,
-        "radius_rounded": radius_rounded,
-        "length": length,
-        "solution": {
-            "raw": [str(s) for s in x_solutions],
-            "latex": [latex(s) for s in x_solutions],
-            "values": [float(s) for s in x_solutions],
-        },
-    }
+    return ParallelTurnoutDistanceResult(
+        distance=distance,
+        distance_rounded=distance_rounded,
+        radius_rounded=radius_rounded,
+        length=length,
+        solution=SolutionDetail(
+            raw=[str(s) for s in x_solutions],
+            latex=[latex(s) for s in x_solutions],
+            values=[float(s) for s in x_solutions],
+        ),
+    )
 
-def 计算规定转弯半径和转弯角度下的xy偏移量(radius: float, angle: float, external_x_offset: float = 0) -> dict:
+
+def 计算规定转弯半径和转弯角度下的xy偏移量(radius: float, angle: float, external_x_offset: float = 0) -> XyOffsetResult:
     """计算规定转弯半径和转弯角度下的xy偏移量。
     几何关系：x = radius * sin(angle), y = radius * cos(angle)
     其中angle为弧度制
@@ -87,19 +135,20 @@ def 计算规定转弯半径和转弯角度下的xy偏移量(radius: float, angl
     yr = calculus.util.function_range(y, r, domain)
     print(xr, yr)
 
-    return {
-        "x": float(xr.inf) + external_x_offset,
-        "y": float(yr.inf) + external_x_offset / math.tan(angle),
-        "x_rounded": math.ceil(float(xr.inf) + external_x_offset),
-        "y_rounded": math.ceil(float(yr.inf) + external_x_offset / math.tan(angle)),
-        "solution": {
-            "raw": [str(xr), str(yr)],
-            "latex": [latex(xr), latex(yr)],
-            "values": [float(xr.inf), float(yr.inf)],
-        },
-    }
+    return XyOffsetResult(
+        x=float(xr.inf) + external_x_offset,
+        y=float(yr.inf) + external_x_offset / math.tan(angle),
+        x_rounded=math.ceil(float(xr.inf) + external_x_offset),
+        y_rounded=math.ceil(float(yr.inf) + external_x_offset / math.tan(angle)),
+        solution=SolutionDetail(
+            raw=[str(xr), str(yr)],
+            latex=[latex(xr), latex(yr)],
+            values=[float(xr.inf), float(yr.inf)],
+        ),
+    )
 
-def 计算特定号数道岔的转弯半径(number: int, spacing: float) -> dict:
+
+def 计算特定号数道岔的转弯半径(number: int, spacing: float) -> TurnoutRadiusResult:
     """计算特定号数道岔的转弯半径。
     几何关系：r = (spacing²/4 + x²/4) / spacing
     其中number为道岔号数，spacing为道岔间距
@@ -113,11 +162,11 @@ def 计算特定号数道岔的转弯半径(number: int, spacing: float) -> dict
     # 從所有解中選擇 y>0 的實數解
     solution_positive = next(s for s in solutions if float(s[0]) > 0 and float(s[1]) > 0)
     radius_value = float(solution_positive[0])
-    return {
-        "radius": radius_value,
-        "solution": {
-            "raw": [str(s) for s in solutions],
-            "latex": [latex(s) for s in solutions],
-            "values": [[float(s[0]), float(s[1])] for s in solutions],
-        },
-    }
+    return TurnoutRadiusResult(
+        radius=radius_value,
+        solution=SolutionDetail(
+            raw=[str(s) for s in solutions],
+            latex=[latex(s) for s in solutions],
+            values=[[float(s[0]), float(s[1])] for s in solutions],
+        ),
+    )

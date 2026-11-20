@@ -130,9 +130,9 @@ class MainFrame(wx.Frame):
             height = float(self.height_text_ctrl.GetValue())
             result = calc_distance(slope, height)
             self._clear_error()
-            self.distance_text_ctrl.SetValue(str(result["distance"]))
-            self.distance_rounded_text_ctrl.SetValue(str(result["distance_rounded"]))
-            self.slope_length_text_ctrl.SetValue(str(result["slope_length"][0]))
+            self.distance_text_ctrl.SetValue(str(result.distance))
+            self.distance_rounded_text_ctrl.SetValue(str(result.distance_rounded))
+            self.slope_length_text_ctrl.SetValue(str(result.slope_length[0]))
         except ValueError:
             self._show_error("輸入格式錯誤：請輸入有效數字（例如 0.0）")
         except (StopIteration, ZeroDivisionError):
@@ -146,8 +146,8 @@ class MainFrame(wx.Frame):
             spacing = float(self.spacing_text_ctrl.GetValue())
             result = calc_parallel_turnout_distance(radius, spacing)
             self._clear_error()
-            self.distance_forward_text_ctrl.SetValue(str(result["distance"]))
-            self.distance_forward_rounded_text_ctrl.SetValue(str(result["distance_rounded"]))
+            self.distance_forward_text_ctrl.SetValue(str(result.distance))
+            self.distance_forward_rounded_text_ctrl.SetValue(str(result.distance_rounded))
         except ValueError:
             self._show_error("輸入格式錯誤：請輸入有效數字（例如 0.0）")
         except (StopIteration, ZeroDivisionError):
@@ -162,10 +162,10 @@ class MainFrame(wx.Frame):
             external_x_offset = float(self.external_x_offset_text_ctrl.GetValue())
             result = 计算规定转弯半径和转弯角度下的xy偏移量(radius, angle, external_x_offset)
             self._clear_error()
-            self.x_text_ctrl_xy_offset.SetValue(str(result["x"]))
-            self.y_text_ctrl_xy_offset.SetValue(str(result["y"]))
-            self.x_rounded_text_ctrl.SetValue(str(result["x_rounded"]))
-            self.y_rounded_text_ctrl.SetValue(str(result["y_rounded"]))
+            self.x_text_ctrl_xy_offset.SetValue(str(result.x))
+            self.y_text_ctrl_xy_offset.SetValue(str(result.y))
+            self.x_rounded_text_ctrl.SetValue(str(result.x_rounded))
+            self.y_rounded_text_ctrl.SetValue(str(result.y_rounded))
         except ValueError:
             self._show_error("輸入格式錯誤：請輸入有效數字（例如 0.0）")
         except (StopIteration, ZeroDivisionError):
